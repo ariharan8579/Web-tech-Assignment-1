@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding the World Wide Web | KPR Institute Web Portal Project</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     Theme: "Signal & Wire" — a network/telecom inspired palette.
+     Dark slate backbone (the "wire"), amber/cyan pulses (the "signal")
+     travelling through it — echoes packet transmission, the core
+     subject of this page.
+     ============================================================ */
+  :root{
+    --bg:            #0d1520;
+    --bg-panel:      #121d2c;
+    --bg-panel-alt:  #162335;
+    --line:          #24344a;
+    --text:          #dce6f2;
+    --text-dim:      #8ea0b8;
+    --signal-amber:  #ffb454;
+    --signal-cyan:   #5ad1e6;
+    --signal-green:  #7ee0a8;
+    --signal-pink:   #f08bb4;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--body);
+    line-height:1.65;
+    font-size:16px;
+  }
+
+  /* subtle wire-grid backdrop */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    opacity:0.12;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  a{ color:var(--signal-cyan); }
+
+  .wrap{ max-width:980px; margin:0 auto; padding:0 24px; position:relative; z-index:1; }
+
+  /* ---------- HEADER / HERO ---------- */
+  header.hero{
+    padding:72px 0 56px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--signal-amber);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .eyebrow .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--signal-amber);
+    box-shadow:0 0 0 4px rgba(255,180,84,0.15);
+    animation:pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 4px rgba(255,180,84,0.15); }
+    50%{ box-shadow:0 0 0 8px rgba(255,180,84,0.05); }
+  }
+  h1.title{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:clamp(34px, 5vw, 54px);
+    line-height:1.08;
+    letter-spacing:-0.01em;
+    max-width:15ch;
+  }
+  h1.title .accent{ color:var(--signal-cyan); }
+  .hero-sub{
+    margin-top:20px;
+    max-width:62ch;
+    color:var(--text-dim);
+    font-size:17px;
+  }
+  .meta-strip{
+    margin-top:36px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .chip{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    border:1px solid var(--line);
+    background:var(--bg-panel);
+    padding:6px 12px;
+    border-radius:100px;
+  }
+  .chip b{ color:var(--text); font-weight:600; }
+
+  /* signal wire animation across hero */
+  .wire-anim{
+    margin-top:44px;
+    height:64px;
+    position:relative;
+  }
+  .wire-anim svg{ width:100%; height:100%; display:block; }
+  .wire-path{
+    fill:none;
+    stroke:var(--line);
+    stroke-width:2;
+  }
+  .wire-pulse{
+    fill:var(--signal-cyan);
+    filter:drop-shadow(0 0 6px var(--signal-cyan));
+  }
+  @keyframes travel{
+    0%{ offset-distance:0%; }
+    100%{ offset-distance:100%; }
+  }
+
+  /* ---------- NAV / TOC ---------- */
+  nav.toc{
+    padding:28px 0;
+    border-bottom:1px solid var(--line);
+  }
+  nav.toc ol{
+    list-style:none;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
+    gap:6px 24px;
+  }
+  nav.toc li a{
+    display:flex;
+    gap:10px;
+    align-items:baseline;
+    text-decoration:none;
+    color:var(--text-dim);
+    font-size:14px;
+    padding:6px 0;
+    border-bottom:1px dashed transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  nav.toc li a:hover{ color:var(--signal-cyan); border-color:var(--line); }
+  nav.toc li a span.num{
+    font-family:var(--mono);
+    color:var(--signal-amber);
+    font-size:12px;
+  }
+
+  /* ---------- SECTIONS ---------- */
+  section.block{
+    padding:64px 0;
+    border-bottom:1px solid var(--line);
+    scroll-margin-top:24px;
+  }
+  section.block:last-of-type{ border-bottom:none; }
+
+  .section-head{
+    display:flex;
+    align-items:flex-start;
+    gap:18px;
+    margin-bottom:28px;
+  }
+  .section-num{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--bg);
+    background:var(--signal-cyan);
+    width:34px; height:34px;
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    font-weight:700;
+  }
+  h2.section-title{
+    font-family:var(--display);
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .section-kicker{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin-top:4px;
+  }
+
+  p{ margin-bottom:14px; color:var(--text); }
+  p.dim{ color:var(--text-dim); }
+
+  ul.feature-list{ list-style:none; margin:18px 0; }
+  ul.feature-list li{
+    padding-left:22px;
+    position:relative;
+    margin-bottom:10px;
+    color:var(--text);
+  }
+  ul.feature-list li::before{
+    content:"▸";
+    position:absolute; left:0; top:0;
+    color:var(--signal-amber);
+  }
+  ul.feature-list li b{ color:var(--signal-cyan); font-weight:600; }
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:26px;
+    margin:22px 0;
+  }
+  .panel-label{
+    font-family:var(--mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--signal-amber);
+    margin-bottom:14px;
+  }
+
+  figure{ margin:26px 0; }
+  figure svg{ width:100%; height:auto; display:block; }
+  figcaption{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    margin-top:12px;
+  }
+
+  /* comparison table */
+  table.compare{
+    width:100%;
+    border-collapse:collapse;
+    margin:20px 0;
+    font-size:14.5px;
+  }
+  table.compare th, table.compare td{
+    border:1px solid var(--line);
+    padding:12px 14px;
+    text-align:left;
+    vertical-align:top;
+  }
+  table.compare th{
+    background:var(--bg-panel-alt);
+    font-family:var(--mono);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--signal-cyan);
+  }
+  table.compare td.client{ border-left:3px solid var(--signal-green); }
+  table.compare td.server{ border-left:3px solid var(--signal-pink); }
+  table.compare tr:nth-child(even) td{ background:rgba(255,255,255,0.015); }
+
+  .tag-client, .tag-server{
+    font-family:var(--mono);
+    font-size:11px;
+    padding:3px 9px;
+    border-radius:6px;
+    display:inline-block;
+  }
+  .tag-client{ background:rgba(126,224,168,0.12); color:var(--signal-green); }
+  .tag-server{ background:rgba(240,139,180,0.12); color:var(--signal-pink); }
+
+  /* two column grid for net concepts */
+  .grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin:20px 0;
+  }
+  @media (max-width:680px){ .grid-2{ grid-template-columns:1fr; } }
+  .mini-card{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+  }
+  .mini-card h4{
+    font-family:var(--display);
+    font-size:15px;
+    color:var(--signal-cyan);
+    margin-bottom:8px;
+  }
+  .mini-card p{ font-size:14px; color:var(--text-dim); margin-bottom:0; }
+
+  code, .code{
+    font-family:var(--mono);
+    background:var(--bg-panel-alt);
+    padding:2px 6px;
+    border-radius:4px;
+    font-size:0.92em;
+    color:var(--signal-amber);
+  }
+
+  /* footer / conclusion */
+  footer{
+    padding:56px 0 80px;
+  }
+  .conclusion-panel{
+    background:linear-gradient(135deg, var(--bg-panel), var(--bg-panel-alt));
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:32px;
+  }
+  .conclusion-panel h3{
+    font-family:var(--display);
+    font-size:18px;
+    margin-bottom:12px;
+    color:var(--signal-amber);
+  }
+  .foot-meta{
+    margin-top:32px;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .eyebrow .dot{ animation:none; }
+    * { animation-duration: 0.001ms !important; }
+  }
+
+  ::selection{ background:var(--signal-cyan); color:var(--bg); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- =========================================================
+       HERO
+       ========================================================= -->
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>U21CS501 &middot; Web Technology &middot; Assignment I &middot; Q.1</div>
+    <h1 class="title">How the <span class="accent">World&nbsp;Wide&nbsp;Web</span> actually works</h1>
+    <p class="hero-sub">
+      A field guide prepared for a newly established institution before it launches its official
+      website — covering the Internet, networking fundamentals, URLs, domain names, browsers,
+      servers, the request&ndash;response cycle, and the client/server scripting divide.
+    </p>
+    <div class="meta-strip">
+      <span class="chip"><b>Course:</b> Web Technology</span>
+      <span class="chip"><b>Year / Sem:</b> III / V</span>
+      <span class="chip"><b>CO:</b> CO1</span>
+      <span class="chip"><b>Marks:</b> 8</span>
+    </div>
+
+    <!-- signal travelling along a wire, echoing "packets on a network" -->
+    <div class="wire-anim" aria-hidden="true">
+      <svg viewBox="0 0 900 64" preserveAspectRatio="none">
+        <path id="wireline" class="wire-path" d="M0,32 L120,32 L160,10 L220,54 L280,32 L900,32"></path>
+        <circle r="5" class="wire-pulse">
+          <animateMotion dur="3.5s" repeatCount="indefinite"
+            path="M0,32 L120,32 L160,10 L220,54 L280,32 L900,32" />
+        </circle>
+        <circle r="5" class="wire-pulse" opacity="0.5">
+          <animateMotion dur="3.5s" repeatCount="indefinite" begin="1.75s"
+            path="M0,32 L120,32 L160,10 L220,54 L280,32 L900,32" />
+        </circle>
+      </svg>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       TABLE OF CONTENTS
+       ========================================================= -->
+  <nav class="toc" aria-label="Table of contents">
+    <ol>
+      <li><a href="#internet"><span class="num">01</span> Internet Overview</a></li>
+      <li><a href="#network"><span class="num">02</span> Network Concepts</a></li>
+      <li><a href="#url"><span class="num">03</span> URL &amp; Structure</a></li>
+      <li><a href="#domain"><span class="num">04</span> Domain Name (DNS)</a></li>
+      <li><a href="#browser-server"><span class="num">05</span> Browsers &amp; Servers</a></li>
+      <li><a href="#working"><span class="num">06</span> How a Website Works</a></li>
+      <li><a href="#scripting"><span class="num">07</span> Client vs Server Scripting</a></li>
+    </ol>
+  </nav>
+
+  <!-- =========================================================
+       01 — INTERNET OVERVIEW
+       ========================================================= -->
+  <section class="block" id="internet">
+    <div class="section-head">
+      <div class="section-num">01</div>
+      <div>
+        <div class="section-kicker">The big picture</div>
+        <h2 class="section-title">Internet Overview</h2>
+      </div>
+    </div>
+
+    <p>The <b>Internet</b> is a massive network of interconnected networks that spans the globe.
+    No single organisation owns it; instead, thousands of independent networks &mdash; run by
+    universities, governments, internet service providers (ISPs), and companies &mdash; agree to
+    speak the same language (the TCP/IP protocol suite) so that any two connected devices,
+    anywhere on Earth, can exchange data.</p>
+
+    <p class="dim">It is worth separating two terms that are often used interchangeably:</p>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>The Internet</h4>
+        <p>The physical and logical infrastructure &mdash; cables, routers, satellites, and the
+        addressing rules that let data packets travel between machines.</p>
+      </div>
+      <div class="mini-card">
+        <h4>The World Wide Web</h4>
+        <p>A service that <em>runs on top of</em> the Internet: a collection of linked documents
+        (web pages) accessed using HTTP/HTTPS and displayed by a browser. Email, video calls, and
+        file transfer also run on the Internet but are not "the Web".</p>
+      </div>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the internet as a network of networks">
+        <defs>
+          <marker id="arrow1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#5ad1e6"/>
+          </marker>
+        </defs>
+        <!-- cloud-ish core -->
+        <ellipse cx="450" cy="130" rx="150" ry="66" fill="#162335" stroke="#24344a"/>
+        <text x="450" y="126" text-anchor="middle" fill="#dce6f2" font-family="Space Grotesk, sans-serif" font-size="15" font-weight="700">THE INTERNET</text>
+        <text x="450" y="146" text-anchor="middle" fill="#8ea0b8" font-family="JetBrains Mono, monospace" font-size="11">backbone of routers &amp; cables</text>
+
+        <!-- surrounding networks -->
+        <g font-family="Inter, sans-serif" font-size="12" fill="#dce6f2">
+          <!-- University network -->
+          <rect x="30" y="20" width="150" height="56" rx="10" fill="#121d2c" stroke="#24344a"/>
+          <text x="105" y="44" text-anchor="middle" font-weight="600">University LAN</text>
+          <text x="105" y="60" text-anchor="middle" fill="#8ea0b8" font-size="10.5">campus network</text>
+          <line x1="180" y1="55" x2="320" y2="105" stroke="#5ad1e6" stroke-width="1.6" marker-end="url(#arrow1)"/>
+
+          <!-- ISP network -->
+          <rect x="30" y="184" width="150" height="56" rx="10" fill="#121d2c" stroke="#24344a"/>
+          <text x="105" y="208" text-anchor="middle" font-weight="600">ISP Network</text>
+          <text x="105" y="224" text-anchor="middle" fill="#8ea0b8" font-size="10.5">e.g. broadband provider</text>
+          <line x1="180" y1="205" x2="320" y2="155" stroke="#5ad1e6" stroke-width="1.6" marker-end="url(#arrow1)"/>
+
+          <!-- Data center -->
+          <rect x="720" y="20" width="150" height="56" rx="10" fill="#121d2c" stroke="#24344a"/>
+          <text x="795" y="44" text-anchor="middle" font-weight="600">Data Center</text>
+          <text x="795" y="60" text-anchor="middle" fill="#8ea0b8" font-size="10.5">hosts websites</text>
+          <line x1="720" y1="55" x2="580" y2="105" stroke="#5ad1e6" stroke-width="1.6" marker-end="url(#arrow1)"/>
+
+          <!-- Home network -->
+          <rect x="720" y="184" width="150" height="56" rx="10" fill="#121d2c" stroke="#24344a"/>
+          <text x="795" y="208" text-anchor="middle" font-weight="600">Home Network</text>
+          <text x="795" y="224" text-anchor="middle" fill="#8ea0b8" font-size="10.5">your laptop / phone</text>
+          <line x1="720" y1="205" x2="580" y2="155" stroke="#5ad1e6" stroke-width="1.6" marker-end="url(#arrow1)"/>
+        </g>
+      </svg>
+      <figcaption>Fig 1.1 — The Internet is not a single network, but many independent networks interconnected via routers.</figcaption>
+    </figure>
+
+    <ul class="feature-list">
+      <li><b>Global reach</b> — any connected device can, in principle, communicate with any other.</li>
+      <li><b>Decentralised</b> — no single point of ownership or control; resilient by design.</li>
+      <li><b>Protocol-driven</b> — TCP/IP defines how data is broken into packets, addressed, and reassembled.</li>
+      <li><b>Foundation for services</b> — the Web, email, VoIP, and file sharing are all applications built on it.</li>
+    </ul>
+  </section>
+
+  <!-- =========================================================
+       02 — NETWORK CONCEPTS
+       ========================================================= -->
+  <section class="block" id="network">
+    <div class="section-head">
+      <div class="section-num">02</div>
+      <div>
+        <div class="section-kicker">Plumbing underneath</div>
+        <h2 class="section-title">Fundamental Computer Network Concepts</h2>
+      </div>
+    </div>
+
+    <p>A <b>computer network</b> is a set of devices connected together so they can share data
+    and resources. A few core ideas make this possible:</p>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>Network scale: LAN / MAN / WAN</h4>
+        <p><b style="color:var(--signal-green)">LAN</b> covers a single building (a college lab).
+        <b style="color:var(--signal-amber)">MAN</b> spans a city. <b style="color:var(--signal-pink)">WAN</b>
+        spans countries — the Internet is the largest WAN of all.</p>
+      </div>
+      <div class="mini-card">
+        <h4>IP Address</h4>
+        <p>A unique numeric label (e.g. <span class="code">192.168.1.10</span> or an IPv6
+        equivalent) assigned to every device, so data knows where to go.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Protocols</h4>
+        <p>Agreed rules for communication — <span class="code">TCP/IP</span> for delivery,
+        <span class="code">HTTP/HTTPS</span> for web pages, <span class="code">FTP</span> for files.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Packet Switching</h4>
+        <p>Data is split into small packets, each routed independently, and reassembled at the
+        destination — far more efficient and fault-tolerant than a single dedicated line.</p>
+      </div>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 900 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing a message split into packets travelling across a network and reassembled">
+        <defs>
+          <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#8ea0b8"/>
+          </marker>
+        </defs>
+        <text x="60" y="30" fill="#dce6f2" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="700">SENDER</text>
+        <rect x="20" y="45" width="120" height="50" rx="8" fill="#121d2c" stroke="#24344a"/>
+        <text x="80" y="75" text-anchor="middle" fill="#dce6f2" font-size="12" font-family="Inter, sans-serif">"Hello Web"</text>
+
+        <!-- packets -->
+        <g font-family="JetBrains Mono, monospace" font-size="10" fill="#0d1520">
+          <rect x="220" y="30" width="60" height="28" rx="5" fill="#5ad1e6"/>
+          <text x="250" y="48" text-anchor="middle">PKT-1</text>
+          <rect x="220" y="65" width="60" height="28" rx="5" fill="#ffb454"/>
+          <text x="250" y="83" text-anchor="middle">PKT-2</text>
+          <rect x="220" y="100" width="60" height="28" rx="5" fill="#7ee0a8"/>
+          <text x="250" y="118" text-anchor="middle">PKT-3</text>
+        </g>
+
+        <line x1="140" y1="70" x2="215" y2="45" stroke="#8ea0b8" stroke-width="1.4" marker-end="url(#arrow2)"/>
+        <line x1="140" y1="70" x2="215" y2="79" stroke="#8ea0b8" stroke-width="1.4" marker-end="url(#arrow2)"/>
+        <line x1="140" y1="70" x2="215" y2="113" stroke="#8ea0b8" stroke-width="1.4" marker-end="url(#arrow2)"/>
+
+        <!-- independent routed paths -->
+        <path d="M280,44 C400,10 520,10 620,55" fill="none" stroke="#5ad1e6" stroke-width="1.4" marker-end="url(#arrow2)"/>
+        <path d="M280,79 C420,79 500,79 620,75" fill="none" stroke="#ffb454" stroke-width="1.4" marker-end="url(#arrow2)"/>
+        <path d="M280,114 C400,140 520,140 620,95" fill="none" stroke="#7ee0a8" stroke-width="1.4" marker-end="url(#arrow2)"/>
+
+        <text x="450" y="140" text-anchor="middle" fill="#8ea0b8" font-family="Inter, sans-serif" font-size="10.5">each packet may take a different route</text>
+
+        <text x="800" y="30" fill="#dce6f2" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="700">RECEIVER</text>
+        <rect x="740" y="45" width="120" height="50" rx="8" fill="#121d2c" stroke="#24344a"/>
+        <text x="800" y="75" text-anchor="middle" fill="#dce6f2" font-size="12" font-family="Inter, sans-serif">"Hello Web"</text>
+      </svg>
+      <figcaption>Fig 2.1 — A message is split into packets, routed independently, and reassembled on arrival.</figcaption>
+    </figure>
+  </section>
+
+  <!-- =========================================================
+       03 — URL & STRUCTURE
+       ========================================================= -->
+  <section class="block" id="url">
+    <div class="section-head">
+      <div class="section-num">03</div>
+      <div>
+        <div class="section-kicker">The address on the envelope</div>
+        <h2 class="section-title">URL and its Structure</h2>
+      </div>
+    </div>
+
+    <p>A <b>URL (Uniform Resource Locator)</b> is the address used to locate a specific resource
+    on the web. Every part of it has a job:</p>
+
+    <figure>
+      <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Breakdown of the parts of a URL">
+        <text x="20" y="40" font-family="JetBrains Mono, monospace" font-size="19" fill="#dce6f2">
+          <tspan fill="#7ee0a8">https</tspan><tspan fill="#8ea0b8">://</tspan><tspan fill="#5ad1e6">www.kpriet.ac.in</tspan><tspan fill="#8ea0b8">:</tspan><tspan fill="#f08bb4">443</tspan><tspan fill="#8ea0b8">/</tspan><tspan fill="#ffb454">admissions/apply.html</tspan><tspan fill="#8ea0b8">?</tspan><tspan fill="#c792ea">year=2026</tspan><tspan fill="#8ea0b8">#</tspan><tspan fill="#ffe08a">form</tspan>
+        </text>
+
+        <!-- callout lines + labels -->
+        <g font-family="Inter, sans-serif" font-size="11.5">
+          <line x1="45" y1="48" x2="45" y2="80" stroke="#7ee0a8" stroke-width="1.2"/>
+          <text x="45" y="94" fill="#7ee0a8" text-anchor="middle">Scheme</text>
+          <text x="45" y="108" fill="#8ea0b8" text-anchor="middle" font-size="10">protocol used</text>
+
+          <line x1="190" y1="48" x2="190" y2="130" stroke="#5ad1e6" stroke-width="1.2"/>
+          <text x="190" y="144" fill="#5ad1e6" text-anchor="middle">Host / Domain</text>
+          <text x="190" y="158" fill="#8ea0b8" text-anchor="middle" font-size="10">server's address</text>
+
+          <line x1="447" y1="48" x2="447" y2="80" stroke="#f08bb4" stroke-width="1.2"/>
+          <text x="447" y="94" fill="#f08bb4" text-anchor="middle">Port</text>
+          <text x="447" y="108" fill="#8ea0b8" text-anchor="middle" font-size="10">service endpoint</text>
+
+          <line x1="580" y1="48" x2="580" y2="130" stroke="#ffb454" stroke-width="1.2"/>
+          <text x="580" y="144" fill="#ffb454" text-anchor="middle">Path</text>
+          <text x="580" y="158" fill="#8ea0b8" text-anchor="middle" font-size="10">resource location</text>
+
+          <line x1="735" y1="48" x2="735" y2="80" stroke="#c792ea" stroke-width="1.2"/>
+          <text x="735" y="94" fill="#c792ea" text-anchor="middle">Query</text>
+          <text x="735" y="108" fill="#8ea0b8" text-anchor="middle" font-size="10">key=value params</text>
+
+          <line x1="830" y1="48" x2="830" y2="130" stroke="#ffe08a" stroke-width="1.2"/>
+          <text x="830" y="144" fill="#ffe08a" text-anchor="middle">Fragment</text>
+          <text x="830" y="158" fill="#8ea0b8" text-anchor="middle" font-size="10">in-page anchor</text>
+        </g>
+        <rect x="10" y="180" width="880" height="1" fill="#24344a"/>
+        <text x="450" y="205" text-anchor="middle" fill="#8ea0b8" font-family="JetBrains Mono, monospace" font-size="11">scheme://host:port/path?query#fragment</text>
+      </svg>
+      <figcaption>Fig 3.1 — Anatomy of a URL, using a sample admissions-page link.</figcaption>
+    </figure>
+
+    <ul class="feature-list">
+      <li><b>Scheme</b> — the protocol, typically <span class="code">http</span> or the encrypted <span class="code">https</span>.</li>
+      <li><b>Host</b> — the domain name (or IP) identifying the server.</li>
+      <li><b>Port</b> — usually hidden because <span class="code">80</span> (HTTP) / <span class="code">443</span> (HTTPS) are defaults.</li>
+      <li><b>Path</b> — the specific file or route on that server.</li>
+      <li><b>Query string</b> — optional parameters sent to the server, starting with <span class="code">?</span>.</li>
+      <li><b>Fragment</b> — jumps the browser to a section within the loaded page; never sent to the server.</li>
+    </ul>
+  </section>
+
+  <!-- =========================================================
+       04 — DOMAIN NAME
+       ========================================================= -->
+  <section class="block" id="domain">
+    <div class="section-head">
+      <div class="section-num">04</div>
+      <div>
+        <div class="section-kicker">Names, not numbers</div>
+        <h2 class="section-title">Domain Name</h2>
+      </div>
+    </div>
+
+    <p>Computers route traffic using IP addresses, but humans remember names, not numbers. A
+    <b>domain name</b> (e.g. <span class="code">kpriet.ac.in</span>) is a human-readable label
+    mapped to an IP address by the <b>Domain Name System (DNS)</b> — effectively the Internet's
+    phone book.</p>
+
+    <figure>
+      <svg viewBox="0 0 900 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DNS lookup and domain hierarchy diagram">
+        <defs>
+          <marker id="arrow3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#5ad1e6"/>
+          </marker>
+        </defs>
+        <!-- lookup flow -->
+        <rect x="20" y="20" width="130" height="50" rx="8" fill="#121d2c" stroke="#24344a"/>
+        <text x="85" y="50" text-anchor="middle" fill="#dce6f2" font-size="12" font-family="Inter, sans-serif">Browser</text>
+
+        <rect x="220" y="20" width="150" height="50" rx="8" fill="#121d2c" stroke="#24344a"/>
+        <text x="295" y="45" text-anchor="middle" fill="#dce6f2" font-size="12" font-family="Inter, sans-serif">DNS Resolver</text>
+        <text x="295" y="60" text-anchor="middle" fill="#8ea0b8" font-size="9.5" font-family="Inter, sans-serif">"phone book lookup"</text>
+
+        <rect x="440" y="20" width="150" height="50" rx="8" fill="#121d2c" stroke="#24344a"/>
+        <text x="515" y="50" text-anchor="middle" fill="#dce6f2" font-size="12" font-family="Inter, sans-serif">203.0.113.42</text>
+
+        <rect x="660" y="20" width="150" height="50" rx="8" fill="#121d2c" stroke="#24344a"/>
+        <text x="735" y="50" text-anchor="middle" fill="#dce6f2" font-size="12" font-family="Inter, sans-serif">Web Server</text>
+
+        <line x1="150" y1="45" x2="215" y2="45" stroke="#5ad1e6" stroke-width="1.4" marker-end="url(#arrow3)"/>
+        <text x="182" y="35" text-anchor="middle" fill="#8ea0b8" font-size="9" font-family="JetBrains Mono, monospace">kpriet.ac.in?</text>
+        <line x1="370" y1="45" x2="435" y2="45" stroke="#5ad1e6" stroke-width="1.4" marker-end="url(#arrow3)"/>
+        <text x="402" y="35" text-anchor="middle" fill="#8ea0b8" font-size="9" font-family="JetBrains Mono, monospace">= IP</text>
+        <line x1="590" y1="45" x2="655" y2="45" stroke="#5ad1e6" stroke-width="1.4" marker-end="url(#arrow3)"/>
+
+        <!-- domain hierarchy -->
+        <text x="20" y="115" fill="#8ea0b8" font-family="JetBrains Mono, monospace" font-size="10">Domain hierarchy, read right → left:</text>
+        <text x="20" y="150" font-family="JetBrains Mono, monospace" font-size="18">
+          <tspan fill="#ffb454">www</tspan><tspan fill="#8ea0b8">.</tspan><tspan fill="#7ee0a8">kpriet</tspan><tspan fill="#8ea0b8">.</tspan><tspan fill="#5ad1e6">ac</tspan><tspan fill="#8ea0b8">.</tspan><tspan fill="#f08bb4">in</tspan>
+        </text>
+        <text x="700" y="120" fill="#f08bb4" font-size="10.5" font-family="Inter, sans-serif">Country TLD</text>
+        <text x="700" y="134" fill="#5ad1e6" font-size="10.5" font-family="Inter, sans-serif">Category (academic)</text>
+        <text x="700" y="148" fill="#7ee0a8" font-size="10.5" font-family="Inter, sans-serif">Second-level (organisation)</text>
+        <text x="700" y="162" fill="#ffb454" font-size="10.5" font-family="Inter, sans-serif">Subdomain (host)</text>
+      </svg>
+      <figcaption>Fig 4.1 — DNS resolves a domain name to an IP address; a domain reads as a hierarchy from right to left.</figcaption>
+    </figure>
+
+    <ul class="feature-list">
+      <li><b>Top-Level Domain (TLD)</b> — <span class="code">.com</span>, <span class="code">.org</span>, <span class="code">.in</span>, <span class="code">.edu</span>.</li>
+      <li><b>Second-Level Domain</b> — the organisation's chosen name, e.g. <span class="code">kpriet</span>.</li>
+      <li><b>Subdomain</b> — an optional prefix like <span class="code">www</span> or <span class="code">admissions</span>.</li>
+      <li><b>Registrar</b> — the accredited body a domain is purchased and renewed through.</li>
+    </ul>
+  </section>
+
+  <!-- =========================================================
+       05 — BROWSERS & SERVERS
+       ========================================================= -->
+  <section class="block" id="browser-server">
+    <div class="section-head">
+      <div class="section-num">05</div>
+      <div>
+        <div class="section-kicker">The two ends of every request</div>
+        <h2 class="section-title">Web Browsers and Web Servers</h2>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>Web Browser</h4>
+        <p>Client software (Chrome, Firefox, Edge, Safari) that sends requests, then parses and
+        renders HTML, CSS, and JavaScript into the visual page a user sees and interacts with.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Web Server</h4>
+        <p>Software (Apache, Nginx, IIS) running on a remote machine that listens for requests,
+        locates or generates the requested resource, and sends it back as a response.</p>
+      </div>
+    </div>
+
+    <p>Both sides speak <b>HTTP/HTTPS</b>: a shared request&ndash;response protocol that defines
+    exactly how a browser asks for something and how a server must answer.</p>
+  </section>
+
+  <!-- =========================================================
+       06 — WORKING PRINCIPLE OF A WEBSITE
+       ========================================================= -->
+  <section class="block" id="working">
+    <div class="section-head">
+      <div class="section-num">06</div>
+      <div>
+        <div class="section-kicker">Putting it all together</div>
+        <h2 class="section-title">Working Principle of a Website</h2>
+      </div>
+    </div>
+
+    <p>When a visitor types the institution's web address, a precise sequence unfolds in a
+    fraction of a second:</p>
+
+    <figure>
+      <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the client server request response cycle for loading a website">
+        <defs>
+          <marker id="arrow4" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#7ee0a8"/>
+          </marker>
+          <marker id="arrow5" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#f08bb4"/>
+          </marker>
+        </defs>
+
+        <rect x="30" y="90" width="160" height="70" rx="10" fill="#121d2c" stroke="#7ee0a8" stroke-width="1.4"/>
+        <text x="110" y="120" text-anchor="middle" fill="#dce6f2" font-family="Space Grotesk, sans-serif" font-size="14" font-weight="700">CLIENT</text>
+        <text x="110" y="138" text-anchor="middle" fill="#8ea0b8" font-family="Inter, sans-serif" font-size="10.5">browser + user</text>
+
+        <rect x="710" y="90" width="160" height="70" rx="10" fill="#121d2c" stroke="#f08bb4" stroke-width="1.4"/>
+        <text x="790" y="120" text-anchor="middle" fill="#dce6f2" font-family="Space Grotesk, sans-serif" font-size="14" font-weight="700">SERVER</text>
+        <text x="790" y="138" text-anchor="middle" fill="#8ea0b8" font-family="Inter, sans-serif" font-size="10.5">web server + files/DB</text>
+
+        <!-- request -->
+        <line x1="190" y1="105" x2="705" y2="105" stroke="#7ee0a8" stroke-width="1.6" marker-end="url(#arrow4)"/>
+        <text x="450" y="95" text-anchor="middle" fill="#7ee0a8" font-family="JetBrains Mono, monospace" font-size="11">1. HTTP GET request (URL)</text>
+
+        <!-- response -->
+        <line x1="705" y1="150" x2="190" y2="150" stroke="#f08bb4" stroke-width="1.6" marker-end="url(#arrow5)"/>
+        <text x="450" y="170" text-anchor="middle" fill="#f08bb4" font-family="JetBrains Mono, monospace" font-size="11">4. HTTP response (HTML/CSS/JS/data)</text>
+
+        <!-- step labels below -->
+        <g font-family="Inter, sans-serif" font-size="11" fill="#8ea0b8">
+          <text x="110" y="200" text-anchor="middle">2. DNS resolves domain → IP,</text>
+          <text x="110" y="215" text-anchor="middle">connection opens (TCP/TLS)</text>
+
+          <text x="790" y="200" text-anchor="middle">3. Server processes request,</text>
+          <text x="790" y="215" text-anchor="middle">fetches/builds the page</text>
+        </g>
+
+        <text x="450" y="245" text-anchor="middle" fill="#ffb454" font-family="Inter, sans-serif" font-size="11">5. Browser renders the page — parsing HTML, applying CSS, running JavaScript</text>
+      </svg>
+      <figcaption>Fig 6.1 — The request&ndash;response cycle that loads every web page.</figcaption>
+    </figure>
+
+    <ul class="feature-list">
+      <li><b>Request</b> — the browser sends an HTTP request for a URL.</li>
+      <li><b>Resolution</b> — DNS converts the domain to an IP address; a connection is established.</li>
+      <li><b>Processing</b> — the server locates a static file or runs a program to build the page.</li>
+      <li><b>Response</b> — HTML, CSS, JavaScript, and any data are sent back.</li>
+      <li><b>Rendering</b> — the browser parses and paints the final, interactive page.</li>
+    </ul>
+  </section>
+
+  <!-- =========================================================
+       07 — CLIENT VS SERVER SCRIPTING
+       ========================================================= -->
+  <section class="block" id="scripting">
+    <div class="section-head">
+      <div class="section-num">07</div>
+      <div>
+        <div class="section-kicker">Where the code actually runs</div>
+        <h2 class="section-title">Client-side vs Server-side Scripting</h2>
+      </div>
+    </div>
+
+    <p>Not all website logic runs in the same place. Some code executes on the visitor's own
+    device; other code executes on the institution's server before anything is even sent out.</p>
+
+    <table class="compare">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th><span class="tag-client">Client-side</span></th>
+          <th><span class="tag-server">Server-side</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Runs on</td>
+          <td class="client">The visitor's browser</td>
+          <td class="server">The web server</td>
+        </tr>
+        <tr>
+          <td>Typical languages</td>
+          <td class="client">JavaScript (+ HTML/CSS)</td>
+          <td class="server">PHP, Node.js, Python, Java, ASP.NET</td>
+        </tr>
+        <tr>
+          <td>Sees source code?</td>
+          <td class="client">Yes — visible via "View Source"</td>
+          <td class="server">No — hidden from the visitor</td>
+        </tr>
+        <tr>
+          <td>Good for</td>
+          <td class="client">Form validation, animations, instant UI feedback</td>
+          <td class="server">Database access, authentication, business logic</td>
+        </tr>
+        <tr>
+          <td>Dependent on</td>
+          <td class="client">User's device &amp; browser capability</td>
+          <td class="server">Server's own resources — consistent for everyone</td>
+        </tr>
+        <tr>
+          <td>Security-sensitive data</td>
+          <td class="client">Should never be placed here</td>
+          <td class="server">Belongs here — kept off the client entirely</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="dim">A real website almost always uses both: client-side scripting for a responsive
+    interface, and server-side scripting for anything that must be trusted, secured, or shared
+    across all users — such as processing the institution's own admission form.</p>
+  </section>
+
+  <!-- =========================================================
+       CONCLUSION / FOOTER
+       ========================================================= -->
+  <footer>
+    <div class="conclusion-panel">
+      <h3>Conclusion</h3>
+      <p>The Web is a document-sharing service layered on top of the Internet's global network of
+      networks. A URL addresses a resource, DNS turns its domain name into a routable IP address,
+      and a browser and server exchange that resource over HTTP through a request&ndash;response
+      cycle. Understanding where client-side code ends and server-side code begins is the first
+      real design decision for any new website — including the one this institution is about to
+      build.</p>
+    </div>
+    <div class="foot-meta">
+      <span>U21CS501 — Web Technology — Assignment I — Question 1</span>
+      <span>KPR Institute of Engineering and Technology (Autonomous)</span>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
