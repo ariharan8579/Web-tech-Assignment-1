@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Admission Form | KPR Institute of Engineering and Technology</title>
+<style>
+  /* ==========================================================
+     DESIGN TOKENS — "Campus Ledger" theme
+     A registrar's-office feel: deep pine green + brass gold,
+     an ivory form "card", and a torn admission-ticket stub as
+     the signature element (this IS an admission form, so the
+     page borrows the visual language of an actual ticket/pass).
+     ========================================================== */
+  :root{
+    --pine:        #123326;   /* deep institutional green — page bg   */
+    --pine-2:      #17402f;   /* panel/header green                    */
+    --brass:       #c9a227;   /* brass/gold accent — seals, rules      */
+    --brass-dim:   #8f7420;
+    --paper:       #faf7ee;   /* ivory form card                       */
+    --paper-line:  #e4ddc9;   /* hairlines on paper                    */
+    --ink:         #23281f;   /* body text on paper                    */
+    --ink-dim:     #6b6a5d;
+    --ok:          #2f7a4f;
+    --err:         #b5443a;
+    --display: 'Georgia', 'Iowan Old Style', serif;
+    --body:    'Inter', 'Segoe UI', sans-serif;
+    --mono:    'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(201,162,39,0.08), transparent 40%),
+      var(--pine);
+    color:var(--paper);
+    font-family:var(--body);
+    padding:32px 16px 64px;
+  }
+
+  .page{ max-width:1120px; margin:0 auto; }
+
+  /* ---------- LETTERHEAD ---------- */
+  .letterhead{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding-bottom:22px;
+    margin-bottom:28px;
+    border-bottom:2px solid var(--brass);
+  }
+  .seal{ flex-shrink:0; }
+  .letterhead h1{
+    font-family:var(--display);
+    font-size:clamp(22px,3.4vw,32px);
+    font-weight:700;
+    letter-spacing:0.01em;
+    color:var(--paper);
+  }
+  .letterhead p{
+    margin:4px 0 0;
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.06em;
+    color:var(--brass);
+    text-transform:uppercase;
+  }
+
+  /* ---------- LAYOUT: form + ticket stub ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:1fr 300px;
+    gap:26px;
+    align-items:start;
+  }
+  @media (max-width:880px){
+    .layout{ grid-template-columns:1fr; }
+    .ticket{ order:-1; }
+  }
+
+  /* ---------- FORM CARD ---------- */
+  form.admission{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:4px;
+    padding:36px clamp(18px,4vw,44px);
+    box-shadow:0 18px 40px rgba(0,0,0,0.35);
+  }
+
+  fieldset{
+    border:none;
+    border-top:1px solid var(--paper-line);
+    padding:26px 0;
+    margin:0;
+  }
+  fieldset:first-of-type{ border-top:none; padding-top:0; }
+
+  legend{
+    font-family:var(--display);
+    font-size:18px;
+    font-weight:700;
+    color:var(--pine-2);
+    padding:0;
+    margin-bottom:4px;
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  legend .lgd-no{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--brass-dim);
+  }
+  .fieldset-hint{
+    font-size:13px;
+    color:var(--ink-dim);
+    margin:0 0 18px;
+  }
+
+  /* ---------- FIELD GRID (box-model on display) ---------- */
+  .field-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:18px 20px;
+  }
+  @media (max-width:620px){
+    .field-grid{ grid-template-columns:1fr; }
+  }
+  .field{ display:flex; flex-direction:column; }
+  .field.span-2{ grid-column:1 / -1; }
+
+  label{
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    color:var(--pine-2);
+    margin-bottom:6px;
+  }
+  label .opt{ color:var(--ink-dim); font-weight:400; }
+  label .req{ color:var(--err); }
+
+  /* Every control shares one box-model recipe:
+     content -> padding -> 1px border -> margin-bottom for rhythm.
+     box-sizing:border-box (set globally above) keeps the declared
+     width the OUTER width, so padding+border never overflow the grid track. */
+  input, select, textarea{
+    font-family:var(--body);
+    font-size:14.5px;
+    color:var(--ink);
+    background:#fff;
+    border:1px solid #cfc7ac;      /* border layer of the box model   */
+    padding:10px 12px;             /* padding layer                    */
+    border-radius:3px;
+    width:100%;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  textarea{ resize:vertical; min-height:84px; font-family:var(--body); }
+
+  /* CSS3 SELECTOR: :focus + :focus-within ---------------------- */
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--pine-2);
+    box-shadow:0 0 0 3px rgba(23,64,47,0.14);
+  }
+  .field:focus-within label{ color:var(--brass-dim); }
+
+  /* CSS3 SELECTOR: pseudo-class ::placeholder ------------------- */
+  input::placeholder, textarea::placeholder{ color:#a7a190; }
+
+  /* CSS3 SELECTOR: :required / :valid / :invalid ---------------- */
+  input:required, select:required{ border-left:3px solid var(--brass); }
+  input:invalid:not(:placeholder-shown){ border-color:var(--err); }
+  input:valid:not(:placeholder-shown){ border-color:var(--ok); }
+
+  /* CSS3 SELECTOR: attribute selector [type="..."] -------------- */
+  input[type="file"]{
+    padding:8px;
+    background:#fbfaf4;
+    font-size:13px;
+  }
+  input[type="color"]{ padding:3px; height:42px; cursor:pointer; }
+  input[type="range"]{ padding:0; border:none; background:transparent; }
+  input[type="checkbox"], input[type="radio"]{
+    width:auto; accent-color:var(--pine-2); margin-right:6px;
+  }
+
+  /* CSS3 SELECTOR: adjacent-sibling + general-sibling ~ ---------- */
+  input[type="checkbox"] + label{
+    display:inline; font-weight:500; color:var(--ink);
+  }
+  .radio-row input ~ label{ margin-right:18px; }
+
+  .radio-row, .checkbox-row{
+    display:flex; flex-wrap:wrap; gap:6px 20px; align-items:center;
+    padding:10px 12px; border:1px solid #cfc7ac; border-radius:3px; background:#fff;
+  }
+  .radio-option, .checkbox-option{ display:flex; align-items:center; }
+
+  /* CSS3 SELECTOR: nth-child (zebra rhythm on stacked hints) ----- */
+  .fieldset-hint:nth-of-type(odd){ color:var(--ink-dim); }
+
+  small.help{ margin-top:5px; font-size:11.5px; color:var(--ink-dim); }
+
+  /* ---------- BOX MODEL DEMO STRIP ---------- */
+  .boxmodel-demo{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    background:#fff; border:1px solid var(--paper-line); border-radius:6px;
+    padding:16px; margin-top:6px;
+  }
+  .bm-visual{
+    background:#e9c9c9; padding:10px;               /* margin ring */
+    border-radius:4px;
+  }
+  .bm-visual .bm-border{
+    background:#e3d7a5; padding:8px;                 /* border ring */
+    border:3px dashed var(--brass-dim); border-radius:3px;
+  }
+  .bm-visual .bm-padding{
+    background:#cfe3d4; padding:10px; border-radius:2px; /* padding ring */
+  }
+  .bm-visual .bm-content{
+    background:var(--pine-2); color:#fff; font-family:var(--mono);
+    font-size:11px; padding:10px 14px; border-radius:2px; text-align:center;
+  }
+  .bm-legend{ font-size:12.5px; color:var(--ink-dim); line-height:1.9; }
+  .bm-legend b{ color:var(--ink); }
+  .swatch{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; }
+
+  /* ---------- MEDIA ELEMENTS SECTION ---------- */
+  .media-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+  }
+  @media (max-width:620px){ .media-grid{ grid-template-columns:1fr; } }
+  .media-card{
+    background:#fff; border:1px solid var(--paper-line); border-radius:6px; padding:14px;
+  }
+  .media-card h4{
+    font-family:var(--display); font-size:14px; margin:0 0 10px; color:var(--pine-2);
+  }
+  .media-card img, .media-card video{ width:100%; border-radius:4px; display:block; }
+  .media-card audio{ width:100%; }
+  .media-caption{ font-size:11.5px; color:var(--ink-dim); margin-top:8px; }
+
+  /* ---------- ACTIONS ---------- */
+  .actions{
+    display:flex; gap:14px; align-items:center; margin-top:8px; flex-wrap:wrap;
+  }
+  button{
+    font-family:var(--body); font-weight:700; font-size:14px;
+    padding:13px 26px; border-radius:3px; cursor:pointer; border:2px solid transparent;
+    letter-spacing:0.02em;
+  }
+  button[type="submit"]{ background:var(--pine-2); color:#fff; }
+  button[type="submit"]:hover{ background:var(--pine); }
+  button[type="reset"]{ background:transparent; color:var(--pine-2); border-color:var(--pine-2); }
+  button[type="reset"]:hover{ background:#eef2ee; }
+
+  /* ---------- ADMISSION TICKET STUB (signature element) ---------- */
+  .ticket{
+    position:sticky; top:20px;
+    background:var(--paper); color:var(--ink);
+    border-radius:6px;
+    box-shadow:0 18px 40px rgba(0,0,0,0.35);
+    overflow:hidden;
+  }
+  .ticket-top{
+    background:var(--pine-2); color:#fff;
+    padding:18px 20px;
+  }
+  .ticket-top .t-kicker{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--brass);
+  }
+  .ticket-top h3{
+    font-family:var(--display); font-size:18px; margin:6px 0 0;
+  }
+  /* perforation: a dashed rule with punched half-circle notches */
+  .perforation{
+    position:relative; height:0; border-top:2px dashed #cfc7ac;
+    margin:0 0;
+  }
+  .perforation::before, .perforation::after{
+    content:""; position:absolute; top:-9px; width:18px; height:18px;
+    background:var(--pine); border-radius:50%;
+  }
+  .perforation::before{ left:-9px; }
+  .perforation::after{ right:-9px; }
+
+  .ticket-body{ padding:20px; }
+  .ticket-row{
+    display:flex; justify-content:space-between; font-size:12.5px;
+    padding:8px 0; border-bottom:1px dotted var(--paper-line);
+  }
+  .ticket-row span:first-child{ color:var(--ink-dim); }
+  .ticket-row span:last-child{ font-family:var(--mono); font-weight:600; }
+
+  .barcode{
+    margin-top:16px; height:46px;
+    background:repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px, var(--ink) 5px 6px, transparent 6px 10px);
+    opacity:0.85; border-radius:2px;
+  }
+  .ticket-foot{
+    text-align:center; font-family:var(--mono); font-size:10px;
+    color:var(--ink-dim); padding:10px 0 18px; letter-spacing:0.08em;
+  }
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===================== LETTERHEAD ===================== -->
+  <div class="letterhead">
+    <!-- IMG media element: an inline SVG "campus emblem" used as an <img>,
+         so the page has no dependency on any external image file. -->
+    <img class="seal" width="56" height="56" alt="Institute emblem"
+      src="data:image/svg+xml;utf8,
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+        <circle cx='50' cy='50' r='47' fill='%2317402f' stroke='%23c9a227' stroke-width='4'/>
+        <path d='M50 24 L74 40 L74 66 L50 82 L26 66 L26 40 Z' fill='none' stroke='%23c9a227' stroke-width='3'/>
+        <text x='50' y='58' font-family='Georgia,serif' font-size='26' fill='%23c9a227' text-anchor='middle'>K</text>
+      </svg>">
+    <div>
+      <h1>Student Admission Form</h1>
+      <p>KPR Institute of Engineering and Technology (Autonomous) — Academic Year 2026&ndash;2027</p>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ===================== MAIN FORM ===================== -->
+    <!-- HTML FORM ELEMENT: <form> wraps every control; action/method are
+         placeholders since this page has no live backend to submit to. -->
+    <form class="admission" action="#" method="post" novalidate>
+
+      <!-- ---------- SECTION 1 : PERSONAL DETAILS ---------- -->
+      <fieldset>
+        <legend><span class="lgd-no">01</span> Personal Details</legend>
+        <p class="fieldset-hint">Fields marked <span class="req">*</span> are required.</p>
+
+        <div class="field-grid">
+          <div class="field span-2">
+            <label for="fullname">Full Name <span class="req">*</span></label>
+            <input type="text" id="fullname" name="fullname" placeholder="As per school records"
+              required minlength="3" pattern="[A-Za-z .]+">
+            <small class="help">Letters and spaces only.</small>
+          </div>
+
+          <div class="field">
+            <label for="dob">Date of Birth <span class="req">*</span></label>
+            <!-- INPUT TYPE: date -->
+            <input type="date" id="dob" name="dob" required>
+          </div>
+
+          <div class="field">
+            <label for="bgroup">Blood Group <span class="opt">(optional)</span></label>
+            <select id="bgroup" name="bgroup">
+              <option value="">Select</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>O+</option><option>O-</option>
+              <option>AB+</option><option>AB-</option>
+            </select>
+          </div>
+
+          <div class="field span-2">
+            <label>Gender <span class="req">*</span></label>
+            <!-- INPUT TYPE: radio (grouped by shared "name") -->
+            <div class="radio-row">
+              <span class="radio-option"><input type="radio" id="g1" name="gender" value="female" required><label for="g1">Female</label></span>
+              <span class="radio-option"><input type="radio" id="g2" name="gender" value="male"><label for="g2">Male</label></span>
+              <span class="radio-option"><input type="radio" id="g3" name="gender" value="other"><label for="g3">Other</label></span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="category">Admission Category <span class="req">*</span></label>
+            <select id="category" name="category" required>
+              <option value="">Select</option>
+              <option>General</option><option>OBC</option>
+              <option>SC</option><option>ST</option><option>Other</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="nationality">Nationality</label>
+            <!-- datalist pairs with a text input to offer suggestions -->
+            <input type="text" id="nationality" name="nationality" list="nat-list" value="Indian">
+            <datalist id="nat-list">
+              <option value="Indian"></option>
+              <option value="Other"></option>
+            </datalist>
+          </div>
+
+          <div class="field span-2">
+            <label for="photo">Applicant Photograph <span class="req">*</span></label>
+            <!-- INPUT TYPE: file, restricted to images -->
+            <input type="file" id="photo" name="photo" accept="image/*" required>
+            <small class="help">JPEG/PNG, passport size, under 200 KB.</small>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ---------- SECTION 2 : CONTACT & ADDRESS ---------- -->
+      <fieldset>
+        <legend><span class="lgd-no">02</span> Contact &amp; Address</legend>
+        <p class="fieldset-hint">Used only for admission-related correspondence.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="email">Email Address <span class="req">*</span></label>
+            <!-- INPUT TYPE: email — built-in format validation -->
+            <input type="email" id="email" name="email" placeholder="you@example.com" required>
+          </div>
+
+          <div class="field">
+            <label for="mobile">Mobile Number <span class="req">*</span></label>
+            <!-- INPUT TYPE: tel, with a pattern for a 10-digit Indian number -->
+            <input type="tel" id="mobile" name="mobile" placeholder="98XXXXXXXX"
+              pattern="[6-9][0-9]{9}" required>
+          </div>
+
+          <div class="field span-2">
+            <label for="address">Residential Address <span class="req">*</span></label>
+            <textarea id="address" name="address" rows="3" placeholder="House / Street / Area" required></textarea>
+          </div>
+
+          <div class="field">
+            <label for="city">City <span class="req">*</span></label>
+            <input type="text" id="city" name="city" required>
+          </div>
+
+          <div class="field">
+            <label for="pin">PIN Code <span class="req">*</span></label>
+            <input type="text" id="pin" name="pin" pattern="[0-9]{6}" placeholder="641407" required>
+          </div>
+
+          <div class="field span-2">
+            <label for="portfolio">Portfolio / LinkedIn <span class="opt">(optional)</span></label>
+            <!-- INPUT TYPE: url -->
+            <input type="url" id="portfolio" name="portfolio" placeholder="https://">
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ---------- SECTION 3 : PROGRAM APPLYING FOR ---------- -->
+      <fieldset>
+        <legend><span class="lgd-no">03</span> Program Applying For</legend>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="program">Degree Program <span class="req">*</span></label>
+            <select id="program" name="program" required>
+              <option value="">Select branch</option>
+              <option>B.Tech — Computer Science &amp; Engineering</option>
+              <option>B.Tech — Electronics &amp; Communication</option>
+              <option>B.Tech — Mechanical Engineering</option>
+              <option>B.Tech — Civil Engineering</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="joinmonth">Expected Joining <span class="req">*</span></label>
+            <!-- INPUT TYPE: month -->
+            <input type="month" id="joinmonth" name="joinmonth" required>
+          </div>
+
+          <div class="field">
+            <label for="pct">12th / Diploma Percentage <span class="req">*</span></label>
+            <!-- INPUT TYPE: number, constrained with min/max/step -->
+            <input type="number" id="pct" name="pct" min="0" max="100" step="0.1" placeholder="e.g. 92.4" required>
+          </div>
+
+          <div class="field">
+            <label for="interest">Extracurricular Interest Level</label>
+            <!-- INPUT TYPE: range -->
+            <input type="range" id="interest" name="interest" min="0" max="10" value="5">
+          </div>
+
+          <div class="field">
+            <label for="tagcolor">Choose a Program Tag Colour</label>
+            <!-- INPUT TYPE: color -->
+            <input type="color" id="tagcolor" name="tagcolor" value="#17402f">
+          </div>
+
+          <div class="field span-2">
+            <label>Preferred Campus <span class="req">*</span></label>
+            <div class="radio-row">
+              <span class="radio-option"><input type="radio" id="c1" name="campus" value="main" required><label for="c1">Main Campus</label></span>
+              <span class="radio-option"><input type="radio" id="c2" name="campus" value="north"><label for="c2">North Campus</label></span>
+            </div>
+          </div>
+
+          <div class="field span-2">
+            <label for="marksheet">Upload Marksheet <span class="req">*</span></label>
+            <input type="file" id="marksheet" name="marksheet" accept=".pdf,.jpg,.png" required>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ---------- SECTION 4 : MEDIA ELEMENTS ---------- -->
+      <fieldset>
+        <legend><span class="lgd-no">04</span> Prospectus — Media Elements</legend>
+        <p class="fieldset-hint">A quick look at campus life before you apply.</p>
+
+        <div class="media-grid">
+          <div class="media-card">
+            <h4>Campus Emblem — &lt;img&gt;</h4>
+            <img alt="Institute emblem, larger" width="160" height="160"
+              src="data:image/svg+xml;utf8,
+              <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+                <circle cx='50' cy='50' r='47' fill='%2317402f' stroke='%23c9a227' stroke-width='4'/>
+                <path d='M50 24 L74 40 L74 66 L50 82 L26 66 L26 40 Z' fill='none' stroke='%23c9a227' stroke-width='3'/>
+                <text x='50' y='58' font-family='Georgia,serif' font-size='26' fill='%23c9a227' text-anchor='middle'>K</text>
+              </svg>" style="width:120px;height:120px;margin:0 auto;display:block;">
+            <p class="media-caption">Static image, rendered inline via a data URI — no external file dependency.</p>
+          </div>
+
+          <div class="media-card">
+            <h4>Campus Tour — &lt;video&gt;</h4>
+            <!-- VIDEO media element with native controls and a fallback message -->
+            <video controls preload="none" poster="">
+              <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+            <p class="media-caption">Sample clip; controls attribute exposes play/pause/volume/seek.</p>
+          </div>
+
+          <div class="media-card span-2" style="grid-column:1/-1;">
+            <h4>College Anthem — &lt;audio&gt;</h4>
+            <!-- AUDIO media element -->
+            <audio controls>
+              <source src="https://www.w3schools.com/html/horse.ogg" type="audio/ogg">
+              Your browser does not support the audio tag.
+            </audio>
+            <p class="media-caption">Sample audio track with native browser controls.</p>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ---------- SECTION 5 : DECLARATION ---------- -->
+      <fieldset>
+        <legend><span class="lgd-no">05</span> Declaration</legend>
+
+        <div class="field-grid">
+          <div class="field span-2">
+            <label for="remarks">Additional Remarks <span class="opt">(optional)</span></label>
+            <textarea id="remarks" name="remarks" rows="3" placeholder="Anything else the admissions office should know"></textarea>
+          </div>
+
+          <div class="field span-2">
+            <div class="checkbox-row">
+              <span class="checkbox-option">
+                <input type="checkbox" id="agree" name="agree" required>
+                <label for="agree">I declare that the information provided above is true to the best of my knowledge. <span class="req">*</span></label>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Submit Application</button>
+          <button type="reset">Clear Form</button>
+        </div>
+      </fieldset>
+    </form>
+
+    <!-- ===================== ADMISSION TICKET STUB ===================== -->
+    <!-- Signature element: mirrors a real admission ticket / boarding-pass
+         stub, reinforcing the page's own subject matter. Purely decorative
+         and static — it does not read live values from the form. -->
+    <aside class="ticket">
+      <div class="ticket-top">
+        <div class="t-kicker">Admit — Provisional</div>
+        <h3>Application Receipt</h3>
+      </div>
+      <div class="perforation"></div>
+      <div class="ticket-body">
+        <div class="ticket-row"><span>Academic Year</span><span>2026&ndash;27</span></div>
+        <div class="ticket-row"><span>Institution</span><span>KPRIET</span></div>
+        <div class="ticket-row"><span>Form Type</span><span>UG&nbsp;Admission</span></div>
+        <div class="ticket-row"><span>Serial No.</span><span>KP-2026-000482</span></div>
+        <div class="ticket-row"><span>Status</span><span style="color:var(--ok)">DRAFT</span></div>
+        <div class="barcode" aria-hidden="true"></div>
+      </div>
+      <div class="ticket-foot">RETAIN THIS RECEIPT FOR YOUR RECORDS</div>
+    </aside>
+
+  </div>
+
+</div>
+</body>
+</html>
