@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grade Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:      #1f3b34;
+    --board-2:    #24463d;
+    --board-edge: #16302a;
+    --chalk:      #f4f1e8;
+    --chalk-dim:  #b9c9c1;
+    --yellow:     #e8c547;
+    --red:        #e2574c;
+    --green:      #6fcf97;
+
+    --hand: 'Kalam', cursive;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,255,255,0.05), transparent 40%),
+      radial-gradient(circle at 80% 85%, rgba(255,255,255,0.04), transparent 45%),
+      var(--board);
+    color:var(--chalk);
+    font-family:var(--body);
+    padding:40px 16px 60px;
+  }
+
+  .frame{
+    max-width:900px; margin:0 auto;
+    background:var(--board-2);
+    border:10px solid var(--board-edge);
+    border-radius:6px;
+    box-shadow:0 25px 60px rgba(0,0,0,0.45), inset 0 0 60px rgba(0,0,0,0.25);
+    padding:clamp(24px,4vw,48px);
+  }
+
+  h1{
+    font-family:var(--hand);
+    font-size:clamp(30px,5vw,42px);
+    text-align:center;
+    color:var(--chalk);
+    text-shadow:0 0 12px rgba(244,241,232,0.15);
+    letter-spacing:0.01em;
+  }
+  .sub{
+    text-align:center; color:var(--chalk-dim); font-size:13.5px;
+    margin-top:6px; margin-bottom:36px;
+  }
+
+  /* ---------- input grid ---------- */
+  .subjects{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:14px;
+    margin-bottom:26px;
+  }
+  @media (max-width:720px){ .subjects{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:420px){ .subjects{ grid-template-columns:1fr; } }
+
+  .subject-field label{
+    display:block; font-family:var(--hand); font-size:16px;
+    color:var(--yellow); margin-bottom:8px; text-align:center;
+  }
+  .subject-field input{
+    width:100%; text-align:center;
+    background:rgba(244,241,232,0.06);
+    border:1.5px dashed rgba(244,241,232,0.4);
+    color:var(--chalk); font-family:var(--mono); font-size:17px; font-weight:600;
+    padding:12px 8px; border-radius:6px;
+  }
+  .subject-field input:focus{
+    outline:none; border-style:solid; border-color:var(--chalk);
+    background:rgba(244,241,232,0.1);
+  }
+
+  .actions{ display:flex; justify-content:center; gap:14px; margin-bottom:8px; }
+  button{
+    font-family:var(--hand); font-size:19px;
+    padding:12px 30px; border-radius:8px; cursor:pointer; border:2px solid var(--chalk);
+    background:transparent; color:var(--chalk); transition:all .2s ease;
+  }
+  button#calcBtn{ background:var(--yellow); color:var(--board-edge); border-color:var(--yellow); }
+  button#calcBtn:hover{ filter:brightness(1.08); }
+  button#resetBtn:hover{ background:rgba(244,241,232,0.1); }
+
+  #errorMsg{
+    text-align:center; color:var(--red); font-size:13.5px; min-height:18px;
+    margin-top:10px; font-family:var(--body); font-weight:600;
+  }
+
+  /* ---------- output ---------- */
+  .result{
+    margin-top:34px; padding-top:30px;
+    border-top:2px dashed rgba(244,241,232,0.3);
+    display:none;
+  }
+  .result.show{ display:block; }
+
+  .stat-row{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;
+    margin-bottom:28px;
+  }
+  @media (max-width:640px){ .stat-row{ grid-template-columns:1fr 1fr; } }
+
+  .stat-card{
+    background:rgba(244,241,232,0.05);
+    border:1px solid rgba(244,241,232,0.18);
+    border-radius:8px; padding:16px; text-align:center;
+  }
+  .stat-card .lbl{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--chalk-dim); }
+  .stat-card .val{ font-family:var(--mono); font-size:26px; font-weight:700; margin-top:6px; }
+  .stat-card.grade .val{ color:var(--yellow); }
+  .stat-card.status .val.pass{ color:var(--green); }
+  .stat-card.status .val.fail{ color:var(--red); }
+
+  table.breakdown{
+    width:100%; border-collapse:collapse; font-size:14px;
+  }
+  table.breakdown th, table.breakdown td{
+    padding:10px 12px; text-align:center;
+    border-bottom:1px solid rgba(244,241,232,0.14);
+  }
+  table.breakdown th{
+    font-family:var(--hand); font-size:15px; color:var(--yellow); text-align:center;
+  }
+  table.breakdown td.status-pass{ color:var(--green); font-weight:700; }
+  table.breakdown td.status-fail{ color:var(--red); font-weight:700; }
+</style>
+</head>
+<body>
+
+  <div class="frame">
+    <h1>Grade Calculator</h1>
+    <p class="sub">Enter marks (out of 100) for five subjects</p>
+
+    <!-- five mark input fields -->
+    <div class="subjects">
+      <div class="subject-field">
+        <label for="s1">Subject 1</label>
+        <input type="number" id="s1" min="0" max="100" placeholder="0-100">
+      </div>
+      <div class="subject-field">
+        <label for="s2">Subject 2</label>
+        <input type="number" id="s2" min="0" max="100" placeholder="0-100">
+      </div>
+      <div class="subject-field">
+        <label for="s3">Subject 3</label>
+        <input type="number" id="s3" min="0" max="100" placeholder="0-100">
+      </div>
+      <div class="subject-field">
+        <label for="s4">Subject 4</label>
+        <input type="number" id="s4" min="0" max="100" placeholder="0-100">
+      </div>
+      <div class="subject-field">
+        <label for="s5">Subject 5</label>
+        <input type="number" id="s5" min="0" max="100" placeholder="0-100">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="calcBtn" onclick="handleCalculate()">Calculate</button>
+      <button id="resetBtn" onclick="handleReset()">Reset</button>
+    </div>
+    <p id="errorMsg"></p>
+
+    <!-- output -->
+    <div class="result" id="resultBlock">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="lbl">Total</div>
+          <div class="val" id="outTotal">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="lbl">Average</div>
+          <div class="val" id="outAverage">0</div>
+        </div>
+        <div class="stat-card grade">
+          <div class="lbl">Grade</div>
+          <div class="val" id="outGrade">-</div>
+        </div>
+        <div class="stat-card status">
+          <div class="lbl">Result</div>
+          <div class="val" id="outStatus">-</div>
+        </div>
+      </div>
+
+      <table class="breakdown">
+        <thead>
+          <tr><th>Subject</th><th>Marks</th><th>Status</th></tr>
+        </thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  /* ============================================================
+     GRADE CALCULATOR
+     Demonstrates: variables & data types, literals, operators,
+     selection statements (if/else, switch), iteration (for loop),
+     and user-defined functions.
+     ============================================================ */
+
+  // -------- constants (variables holding literals) --------
+  const SUBJECT_COUNT = 5;        // numeric literal
+  const PASS_MARK     = 40;       // numeric literal — minimum per-subject pass mark
+  const MAX_MARK      = 100;      // numeric literal — upper bound for a valid mark
+
+  /**
+   * Reads the five subject inputs and returns them as an array of numbers.
+   * Returns null (and shows an error) if any field is empty or out of range.
+   */
+  function readMarks() {
+    const ids = ['s1', 's2', 's3', 's4', 's5']; // string literals
+    const marks = [];                            // empty array — will hold Number values
+
+    // ITERATION (for loop): walk through all five input fields
+    for (let i = 0; i < ids.length; i++) {
+      const raw = document.getElementById(ids[i]).value; // string from the DOM
+      const num = Number(raw);                            // convert to a Number (data type)
+
+      // SELECTION (if / else if): validate range using comparison + logical operators
+      if (raw === '' || isNaN(num)) {
+        showError('Please enter a mark for every subject.');
+        return null;
+      } else if (num < 0 || num > MAX_MARK) {
+        showError('Marks must be between 0 and ' + MAX_MARK + '.');
+        return null;
+      }
+
+      marks.push(num); // arithmetic-free append; num is a valid mark
+    }
+
+    clearError();
+    return marks;
+  }
+
+  /**
+   * User-defined function: sums an array of marks using iteration
+   * and the '+=' compound assignment operator.
+   */
+  function calculateTotal(marks) {
+    let total = 0;                       // variable, initialised with a numeric literal
+    for (let i = 0; i < marks.length; i++) {
+      total += marks[i];                 // arithmetic operator: +=
+    }
+    return total;
+  }
+
+  /**
+   * User-defined function: average = total / count (division operator).
+   * toFixed(2) is used purely for display formatting.
+   */
+  function calculateAverage(total, count) {
+    return total / count; // arithmetic operator: /
+  }
+
+  /**
+   * User-defined function: maps an average mark to a letter grade
+   * using an if / else-if / else chain (selection statement).
+   */
+  function calculateGrade(average) {
+    let grade; // declared, assigned below
+
+    if (average >= 90) {
+      grade = 'O';
+    } else if (average >= 80) {
+      grade = 'A+';
+    } else if (average >= 70) {
+      grade = 'A';
+    } else if (average >= 60) {
+      grade = 'B+';
+    } else if (average >= 50) {
+      grade = 'B';
+    } else if (average >= PASS_MARK) {
+      grade = 'C';
+    } else {
+      grade = 'RA'; // "Reappear" — below the pass mark
+    }
+    return grade;
+  }
+
+  /**
+   * User-defined function: returns a short remark for a grade,
+   * demonstrating a switch statement (another selection construct).
+   */
+  function gradeRemark(grade) {
+    let remark;
+    switch (grade) {
+      case 'O':
+        remark = 'Outstanding';
+        break;
+      case 'A+':
+      case 'A':
+        remark = 'Excellent';
+        break;
+      case 'B+':
+      case 'B':
+        remark = 'Good';
+        break;
+      case 'C':
+        remark = 'Satisfactory';
+        break;
+      default:
+        remark = 'Needs Improvement';
+    }
+    return remark;
+  }
+
+  /**
+   * User-defined function: overall pass/fail.
+   * A student fails if the average is below the pass mark, OR
+   * if any single subject is below the pass mark (checked via loop).
+   */
+  function checkPassFail(marks, average) {
+    // SELECTION + logical operator: overall average must clear the pass mark
+    let overallPass = average >= PASS_MARK;
+
+    // ITERATION: an individual subject failure fails the whole result,
+    // even if the average happens to clear the pass mark.
+    for (let i = 0; i < marks.length; i++) {
+      if (marks[i] < PASS_MARK) {
+        overallPass = false; // boolean literal
+      }
+    }
+    return overallPass; // boolean data type
+  }
+
+  /**
+   * Builds the per-subject breakdown table rows using a loop.
+   */
+  function renderBreakdown(marks) {
+    const tbody = document.getElementById('breakdownBody');
+    tbody.innerHTML = ''; // clear previous run
+
+    for (let i = 0; i < marks.length; i++) {
+      const pass = marks[i] >= PASS_MARK; // boolean, ternary-friendly
+      const row = document.createElement('tr');
+      row.innerHTML =
+        '<td>Subject ' + (i + 1) + '</td>' +
+        '<td>' + marks[i] + '</td>' +
+        '<td class="' + (pass ? 'status-pass' : 'status-fail') + '">' +
+          (pass ? 'Pass' : 'Fail') +
+        '</td>';
+      tbody.appendChild(row);
+    }
+  }
+
+  /** Shows a validation error message. */
+  function showError(msg) {
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('resultBlock').classList.remove('show');
+  }
+
+  /** Clears any validation error message. */
+  function clearError() {
+    document.getElementById('errorMsg').textContent = '';
+  }
+
+  /**
+   * Main handler wired to the Calculate button.
+   * Orchestrates the user-defined functions above.
+   */
+  function handleCalculate() {
+    const marks = readMarks();
+    if (marks === null) return; // SELECTION: bail out on invalid input
+
+    const total   = calculateTotal(marks);
+    const average = calculateAverage(total, SUBJECT_COUNT);
+    const grade   = calculateGrade(average);
+    const passed  = checkPassFail(marks, average);
+
+    document.getElementById('outTotal').textContent   = total;
+    document.getElementById('outAverage').textContent = average.toFixed(2);
+    document.getElementById('outGrade').textContent   = grade + ' (' + gradeRemark(grade) + ')';
+
+    const statusEl = document.getElementById('outStatus');
+    statusEl.textContent = passed ? 'PASS' : 'FAIL';        // ternary operator
+    statusEl.className   = 'val ' + (passed ? 'pass' : 'fail');
+
+    renderBreakdown(marks);
+    document.getElementById('resultBlock').classList.add('show');
+  }
+
+  /** Resets all inputs and hides the result panel. */
+  function handleReset() {
+    const ids = ['s1', 's2', 's3', 's4', 's5'];
+    for (let i = 0; i < ids.length; i++) {
+      document.getElementById(ids[i]).value = '';
+    }
+    clearError();
+    document.getElementById('resultBlock').classList.remove('show');
+  }
+</script>
+</body>
+</html>
