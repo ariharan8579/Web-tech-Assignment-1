@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --counter:    #2b2320;
+    --counter-2:  #3a2f2a;
+    --paper:      #f7f2df;
+    --paper-2:    #efe9cf;
+    --ink:        #2c2a24;
+    --ink-dim:    #7a7666;
+    --green:      #2f7d4f;
+    --red:        #b3392c;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.05), transparent 55%),
+      var(--counter);
+    font-family:var(--body);
+    color:var(--paper);
+    padding:48px 16px 72px;
+    display:flex; justify-content:center;
+  }
+
+  .receipt-wrap{ width:100%; max-width:420px; }
+
+  .store-stamp{
+    text-align:center; margin-bottom:22px;
+  }
+  .store-stamp .ring{
+    display:inline-block; border:3px solid var(--paper); border-radius:50%;
+    padding:14px 20px; transform:rotate(-4deg);
+  }
+  .store-stamp h1{
+    font-family:var(--mono); font-size:19px; letter-spacing:0.12em; margin:0;
+  }
+  .store-stamp p{ font-family:var(--mono); font-size:10px; letter-spacing:0.1em; color:var(--paper); opacity:0.75; margin-top:2px; }
+
+  /* ---------- receipt paper ---------- */
+  .receipt{
+    background:var(--paper); color:var(--ink);
+    padding:28px 24px 4px;
+    box-shadow:0 25px 50px rgba(0,0,0,0.4);
+    position:relative;
+  }
+  .receipt-header{ text-align:center; margin-bottom:18px; }
+  .receipt-header .name{ font-family:var(--mono); font-weight:700; font-size:16px; letter-spacing:0.06em; }
+  .receipt-header .addr{ font-family:var(--mono); font-size:10.5px; color:var(--ink-dim); margin-top:4px; }
+
+  .dashed{ border-top:1.5px dashed #c9c2a4; margin:14px 0; }
+
+  /* input rows for 3 products */
+  .item-row{
+    display:grid; grid-template-columns:1.4fr 0.8fr 1fr; gap:8px; align-items:end;
+    margin-bottom:14px;
+  }
+  .item-row .field label{
+    display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-dim); margin-bottom:5px;
+  }
+  .item-row input, .item-row select{
+    width:100%; font-family:var(--mono); font-size:13.5px;
+    background:var(--paper-2); border:1px solid #c9c2a4; border-radius:2px;
+    padding:8px 8px; color:var(--ink);
+  }
+  .item-row input:focus, .item-row select:focus{ outline:none; border-color:var(--green); }
+
+  .actions{ display:flex; gap:10px; margin:20px 0 6px; }
+  button{
+    flex:1; font-family:var(--mono); font-weight:700; font-size:13px;
+    letter-spacing:0.06em; text-transform:uppercase;
+    padding:12px; border-radius:2px; cursor:pointer; border:1.5px solid var(--ink);
+  }
+  #billBtn{ background:var(--ink); color:var(--paper); }
+  #billBtn:hover{ background:#43413a; }
+  #clearBtn{ background:transparent; color:var(--ink); }
+  #clearBtn:hover{ background:rgba(0,0,0,0.05); }
+
+  #errorMsg{ font-family:var(--mono); font-size:11.5px; color:var(--red); min-height:16px; text-align:center; margin:6px 0 0; }
+
+  /* ---------- printed bill output ---------- */
+  .print-out{ display:none; margin-top:6px; }
+  .print-out.show{ display:block; }
+
+  .line{
+    display:flex; justify-content:space-between; font-family:var(--mono); font-size:12.5px;
+    padding:3px 0;
+  }
+  .line .desc{ color:var(--ink); }
+  .line .desc small{ display:block; color:var(--ink-dim); font-size:10.5px; }
+  .line .amt{ font-weight:600; }
+
+  .line.discount .amt{ color:var(--green); }
+  .line.total{ font-size:15.5px; font-weight:700; padding-top:10px; }
+  .line.total .amt{ color:var(--ink); }
+
+  .savings-tag{
+    text-align:center; font-family:var(--mono); font-size:11px; color:var(--green);
+    background:rgba(47,125,79,0.1); border:1px dashed var(--green);
+    padding:7px; border-radius:3px; margin:14px 0;
+  }
+
+  .barcode{
+    height:44px; margin:20px 0 6px;
+    background:repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 9px);
+    opacity:0.85;
+  }
+  .thanks{
+    text-align:center; font-family:var(--mono); font-size:11px; color:var(--ink-dim);
+    padding:6px 0 22px; letter-spacing:0.06em;
+  }
+
+  /* zigzag torn edge at bottom of receipt — signature element */
+  .zigzag{
+    height:16px;
+    background:
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0,
+      linear-gradient(45deg, var(--paper) 50%, transparent 50%) 0 0;
+    background-size:16px 16px;
+    background-repeat:repeat-x;
+  }
+</style>
+</head>
+<body>
+
+<div class="receipt-wrap">
+  <div class="store-stamp">
+    <div class="ring">
+      <h1>GREENLEAF MART</h1>
+      <p>SELF-CHECKOUT</p>
+    </div>
+  </div>
+
+  <div class="receipt">
+    <div class="receipt-header">
+      <div class="name">GREENLEAF SUPERMARKET</div>
+      <div class="addr">Arasur, Coimbatore &middot; GSTIN 33AAAAA0000A1Z5</div>
+    </div>
+    <div class="dashed"></div>
+
+    <!-- three product input rows -->
+    <div class="item-row">
+      <div class="field"><label for="p1name">Product 1</label><input type="text" id="p1name" placeholder="e.g. Rice 5kg" value="Rice 5kg"></div>
+      <div class="field"><label for="p1qty">Qty</label><input type="number" id="p1qty" min="0" step="1" value="1"></div>
+      <div class="field"><label for="p1price">Unit ₹</label><input type="number" id="p1price" min="0" step="0.01" value="450"></div>
+    </div>
+    <div class="item-row">
+      <div class="field"><label for="p2name">Product 2</label><input type="text" id="p2name" placeholder="e.g. Cooking Oil" value="Cooking Oil 1L"></div>
+      <div class="field"><label for="p2qty">Qty</label><input type="number" id="p2qty" min="0" step="1" value="2"></div>
+      <div class="field"><label for="p2price">Unit ₹</label><input type="number" id="p2price" min="0" step="0.01" value="180"></div>
+    </div>
+    <div class="item-row">
+      <div class="field"><label for="p3name">Product 3</label><input type="text" id="p3name" placeholder="e.g. Detergent" value="Detergent 2kg"></div>
+      <div class="field"><label for="p3qty">Qty</label><input type="number" id="p3qty" min="0" step="1" value="3"></div>
+      <div class="field"><label for="p3price">Unit ₹</label><input type="number" id="p3price" min="0" step="0.01" value="240"></div>
+    </div>
+
+    <div class="actions">
+      <button id="billBtn" onclick="handleGenerateBill()">Generate Bill</button>
+      <button id="clearBtn" onclick="handleClear()">Clear</button>
+    </div>
+    <p id="errorMsg"></p>
+
+    <!-- printed output -->
+    <div class="print-out" id="printOut">
+      <div class="dashed"></div>
+      <div id="itemLines"></div>
+      <div class="dashed"></div>
+      <div class="line"><div class="desc">Subtotal</div><div class="amt" id="outSubtotal">₹0.00</div></div>
+      <div class="line discount" id="discountLine" style="display:none;">
+        <div class="desc">Discount (10%)</div><div class="amt" id="outDiscount">-₹0.00</div>
+      </div>
+      <div class="dashed"></div>
+      <div class="line total"><div class="desc">TOTAL PAYABLE</div><div class="amt" id="outFinal">₹0.00</div></div>
+
+      <div class="savings-tag" id="savingsTag" style="display:none;"></div>
+
+      <div class="barcode" aria-hidden="true"></div>
+      <div class="thanks">THANK YOU FOR SHOPPING WITH US</div>
+    </div>
+  </div>
+  <div class="zigzag" aria-hidden="true"></div>
+</div>
+
+<script>
+  /* ============================================================
+     SUPERMARKET BILLING PROGRAM
+     Demonstrates: variables & data types, literals, operators,
+     statements (selection + iteration), and user-defined functions.
+     ============================================================ */
+
+  // -------- constants (variables holding literals) --------
+  const PRODUCT_COUNT     = 3;      // numeric literal — number of line items
+  const DISCOUNT_THRESHOLD = 2000;  // numeric literal — bill qualifies for a discount above this
+  const DISCOUNT_RATE     = 0.10;   // numeric literal — 10% off
+
+  /**
+   * Reads the three product rows from the form.
+   * Returns an array of objects: { name, qty, price }.
+   * Returns null (and shows an error) if any row is invalid.
+   */
+  function readProducts() {
+    const ids = ['p1', 'p2', 'p3']; // string literals used to build element ids
+    const products = [];
+
+    // ITERATION (for loop): walk through the three product rows
+    for (let i = 0; i < ids.length; i++) {
+      const name  = document.getElementById(ids[i] + 'name').value.trim(); // string
+      const qty   = Number(document.getElementById(ids[i] + 'qty').value);  // number
+      const price = Number(document.getElementById(ids[i] + 'price').value); // number
+
+      // SELECTION (if / else if): validate each row with comparison + logical operators
+      if (name === '') {
+        showError('Enter a name for every product.');
+        return null;
+      } else if (isNaN(qty) || qty < 0) {
+        showError('Quantity must be zero or more.');
+        return null;
+      } else if (isNaN(price) || price < 0) {
+        showError('Unit price must be zero or more.');
+        return null;
+      }
+
+      // push a small object literal describing this line item
+      products.push({ name: name, qty: qty, price: price });
+    }
+
+    clearError();
+    return products;
+  }
+
+  /**
+   * User-defined function: line total = quantity * unit price
+   * (arithmetic operator: *).
+   */
+  function calculateLineTotal(product) {
+    return product.qty * product.price;
+  }
+
+  /**
+   * User-defined function: sums all line totals using iteration
+   * and the '+=' compound assignment operator.
+   */
+  function calculateSubtotal(products) {
+    let subtotal = 0; // variable initialised with a numeric literal
+    for (let i = 0; i < products.length; i++) {
+      subtotal += calculateLineTotal(products[i]);
+    }
+    return subtotal;
+  }
+
+  /**
+   * User-defined function: applies a 10% discount when the subtotal
+   * exceeds the threshold (selection statement).
+   * Returns an object literal with the discount amount and final total.
+   */
+  function applyDiscount(subtotal) {
+    let discount = 0;                 // no discount by default
+    let qualifies = false;            // boolean literal
+
+    // SELECTION: only discount bills over the threshold
+    if (subtotal > DISCOUNT_THRESHOLD) {
+      discount  = subtotal * DISCOUNT_RATE; // arithmetic operator: *
+      qualifies = true;
+    }
+
+    const finalTotal = subtotal - discount; // arithmetic operator: -
+    return { discount: discount, finalTotal: finalTotal, qualifies: qualifies };
+  }
+
+  /** Renders each product's line in the printed receipt (loop-built HTML). */
+  function renderItemLines(products) {
+    const container = document.getElementById('itemLines');
+    container.innerHTML = '';
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      const lineTotal = calculateLineTotal(p);
+      const row = document.createElement('div');
+      row.className = 'line';
+      row.innerHTML =
+        '<div class="desc">' + p.name + '<small>' + p.qty + ' x \u20B9' + p.price.toFixed(2) + '</small></div>' +
+        '<div class="amt">\u20B9' + lineTotal.toFixed(2) + '</div>';
+      container.appendChild(row);
+    }
+  }
+
+  /** Shows a validation error and hides any previous printed bill. */
+  function showError(msg) {
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('printOut').classList.remove('show');
+  }
+
+  /** Clears any validation error. */
+  function clearError() {
+    document.getElementById('errorMsg').textContent = '';
+  }
+
+  /**
+   * Main handler wired to the "Generate Bill" button.
+   * Orchestrates the user-defined functions above.
+   */
+  function handleGenerateBill() {
+    const products = readProducts();
+    if (products === null) return; // SELECTION: stop on invalid input
+
+    const subtotal = calculateSubtotal(products);
+    const result    = applyDiscount(subtotal); // { discount, finalTotal, qualifies }
+
+    renderItemLines(products);
+    document.getElementById('outSubtotal').textContent = '\u20B9' + subtotal.toFixed(2);
+    document.getElementById('outFinal').textContent     = '\u20B9' + result.finalTotal.toFixed(2);
+
+    const discountLine = document.getElementById('discountLine');
+    const savingsTag    = document.getElementById('savingsTag');
+
+    // SELECTION: only reveal the discount line / savings tag when it applies
+    if (result.qualifies) {
+      document.getElementById('outDiscount').textContent = '-\u20B9' + result.discount.toFixed(2);
+      discountLine.style.display = 'flex';
+      savingsTag.style.display   = 'block';
+      savingsTag.textContent     = 'Bill over \u20B92000 \u2014 you saved \u20B9' + result.discount.toFixed(2) + '!';
+    } else {
+      discountLine.style.display = 'none';
+      savingsTag.style.display   = 'none';
+    }
+
+    document.getElementById('printOut').classList.add('show');
+  }
+
+  /** Resets all product rows and hides the printed bill. */
+  function handleClear() {
+    const ids = ['p1', 'p2', 'p3'];
+    for (let i = 0; i < ids.length; i++) {
+      document.getElementById(ids[i] + 'name').value  = '';
+      document.getElementById(ids[i] + 'qty').value   = '';
+      document.getElementById(ids[i] + 'price').value = '';
+    }
+    clearError();
+    document.getElementById('printOut').classList.remove('show');
+  }
+</script>
+</body>
+</html>
